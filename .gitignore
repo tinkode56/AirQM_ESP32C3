@@ -1,6 +1,5 @@
 # Project specific
 .devcontainer/*
-.vscode/*
 build/*
 
 # Prerequisites
