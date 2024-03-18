@@ -1,6 +1,8 @@
 # Project specific
 .devcontainer/*
 build/*
+*.log
+*.gdb
 
 # Prerequisites
 *.d
