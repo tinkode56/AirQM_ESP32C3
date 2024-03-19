@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-15 14:00:51 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-19 21:05:41
+ * @Last Modified time: 2024-03-19 23:43:16
  */
 
 #include <stdio.h>
@@ -57,13 +57,13 @@ void app_main(void)
     i2c_master_bus_handle_t bus_handle;
     ESP_ERROR_CHECK(i2c_new_master_bus(&conf, &bus_handle));
 
-    xTaskCreate(vI2CDevTask, "I2CDev TASK", 2560, (void *)bus_handle, tskIDLE_PRIORITY, &xI2CDevTaskHandle);
+    xTaskCreate(vI2CDevTask, "I2CDev TASK", 2560, (void *)bus_handle, 11, &xI2CDevTaskHandle);
     configASSERT(xI2CDevTaskHandle);
 
-    xTaskCreate(vOledTask, "OLED TASK", 2560, NULL, tskIDLE_PRIORITY, &xOledTaskHandle);
+    xTaskCreate(vOledTask, "OLED TASK", 2560, NULL, 11, &xOledTaskHandle);
     configASSERT(xOledTaskHandle);
 
-    xTaskCreate(vI2CDummyTask, "DUMMY TASK", 2560, NULL, tskIDLE_PRIORITY, &xI2CDummyTaskHandle);
+    xTaskCreate(vI2CDummyTask, "DUMMY TASK", 2560, NULL, 11, &xI2CDummyTaskHandle);
     configASSERT(xI2CDummyTaskHandle);
 
     xTaskCreate(vSenseairTask, "SENSEAIR TASK", 2560, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
