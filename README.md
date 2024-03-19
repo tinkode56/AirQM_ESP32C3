@@ -30,24 +30,31 @@ Below is short explanation of remaining files in the project folder.
 ├── pytest_main.py      Python script used for automated testing
 ├── components
 │   ├── oled_display
-│       ├── include
-│           ├── oled_display.h
-│       ├── CMakeLists.txt
-│       ├── fonts.c
-│       └── oled_display.c
+│   │   ├── include
+│   │   │   └── oled_display.h
+│   │   ├── CMakeLists.txt
+│   │   ├── fonts.c
+│   │   └── oled_display.c
+│   ├── senseair_s8
+│   │   ├── include
+│   │   │   └── senseair_s8.h
+│   │   ├── CMakeLists.txt
+│   │   └── senseair_s8.c
 │   ├── sgp41
-│       ├── include
-│           ├── sensirion_gas_index_algorithm.h
-│           ├── sgp41.h
-│       ├── CMakeLists.txt
-│       └── sensirion_gas_index_algorithm.c
-│       └── sgp41.c
+│   │   ├── include
+│   │   │   ├── sensirion_gas_index_algorithm.h
+│   │   │   └── sgp41.h
+│   │   ├── CMakeLists.txt
+│   │   ├── sensirion_gas_index_algorithm.c
+│   │   └── sgp41.c
 │   ├── sht45
-│       ├── include
-│           ├── sht45.h
-│       ├── CMakeLists.txt
-│       └── sht45.c
+│   │   ├── include
+│   │   │   └── sht45.h
+│   │   ├── CMakeLists.txt
+│   │   └── sht45.c
 ├── main
+│   ├── include
+│   │   └── main.h
 │   ├── CMakeLists.txt
 │   └── main.c
 ├── esp32.svd

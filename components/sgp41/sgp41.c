@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 #include "sgp41.h"
-#include "sht45.h"
+#include "sht45.h"  // For CRC computation
 #include "sensirion_gas_index_algorithm.h"
 #include "string.h"
 #include <freertos/FreeRTOS.h>

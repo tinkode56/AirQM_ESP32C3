@@ -3,6 +3,9 @@
 build/*
 *.log
 *.gdb
+*.lock
+managed_components/*
+partition_table/*
 
 # Prerequisites
 *.d

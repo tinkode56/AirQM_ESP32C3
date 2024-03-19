@@ -123,8 +123,7 @@ void oled_display_main(void)
         {
             oled_flush();
         }
-        
-}
+    }
 }
 
 void oled_flush(void)
@@ -150,27 +149,12 @@ void oled_flush(void)
         memset(page_changed, 0, 8);
     }
 
-    // for (uint8_t i = 0; i < 8; i++)
-    // {
-    //     ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0xB0 | (i & 0x0F), NULL, 0));
-    //     ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0x10, NULL, 0));
-    //     ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0x00, NULL, 0));
-        
-    //     ESP_ERROR_CHECK(esp_lcd_panel_io_tx_color(io_handle, -1, &GDDRAM_frame[DISPLAY_WIDTH * i], DISPLAY_WIDTH));
-    // }
-
 }
 
 void oled_draw_glyph(char glyph, uint8_t row, uint8_t column)
 {
     // uint8_t index = glyph ? (glyph - 0x20) : (glyph);
     uint8_t index = CHAR_2_GLYPH(glyph);
-
-    // if(letter == 0)
-    //     index = letter;
-    // else
-    //     index = letter - 20;
-    // ESP_LOGI(TAG, "letter code %x , index %d, row %d, column %d", glyph, index, row, column);
 
     memcpy(&GDDRAM_frame[(row * DISPLAY_WIDTH) + (column * 6)], &Font6x8[index * 6], 6);
     // Signal a change of page data

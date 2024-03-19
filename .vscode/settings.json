@@ -14,7 +14,7 @@
     "idf.portWin": "COM5",
     "idf.pythonBinPathWin": "C:\\Users\\acroi\\.espressif\\python_env\\idf5.2_py3.11_env\\Scripts\\python.exe",
     "idf.toolsPathWin": "C:\\Users\\acroi\\.espressif",
-    "idf.flashType": "JTAG",
+    "idf.flashType": "UART",
     "files.associations": {
         "esp_lcd_panel_vendor.h": "c",
         "gpio.h": "c",
@@ -31,6 +31,9 @@
         "task.h": "c",
         "main.h": "c",
         "string.h": "c",
-        "sensirion_gas_index_algorithm.h": "c"
+        "sensirion_gas_index_algorithm.h": "c",
+        "cstdlib": "c",
+        "esp_assert.h": "c",
+        "soc_caps.h": "c"
     }
 }

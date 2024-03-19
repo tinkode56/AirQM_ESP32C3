@@ -2,6 +2,26 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "espidf",
+      "name": "Launch IDF",
+      "request": "launch",
+      "debugPort": 9998,
+      "logLevel": 2,
+      "mode": "auto",
+      "verifyAppBinBeforeDebug": false,
+      "tmoScaleFactor": 1,
+      "initGdbCommands": [
+        "target remote :3333",
+        "symbol-file D:\\Projects\\ESP_IDF_Projects\\AirQM_ESP32C3\\build\\AirQM_ESP32C3.elf",
+        "mon reset halt",
+        "flushregs",
+        "thb app_main"
+      ],
+      "env": {
+        // "CUSTOM_ENV_VAR": "SOME_VALUE"
+      }
+    },
+    {
       "name": "GDB",
       "type": "cppdbg",
       "request": "launch",
@@ -17,8 +37,8 @@
         { "text": "target remote :3333" },
         { "text": "set remote hardware-watchpoint-limit 8"},
         { "text": "mon reset halt" },
+        { "text": "maintenance flush register-cache" },
         { "text": "thb app_main" },
-        { "text": "flushregs" }
       ],
       "externalConsole": false,
       "logging": {

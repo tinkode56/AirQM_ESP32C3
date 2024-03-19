@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-02-29 18:06:56 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-02-29 18:57:35
+ * @Last Modified time: 2024-03-19 18:23:37
  */
 #include <stdio.h>
 #include "esp_lcd_panel_io.h"
@@ -15,11 +15,10 @@
 // #include "lvgl.h"
 
 #define OLED_SCLK_PIN   GPIO_NUM_4
-#define OLED_MOSI_PIN   GPIO_NUM_5
-#define OLED_CS_PIN     GPIO_NUM_6
-#define OLED_DC_PIN     GPIO_NUM_7
-#define OLED_MISO_PIN   GPIO_NUM_8
-#define OLED_RESET_PIN  GPIO_NUM_9
+#define OLED_MOSI_PIN   GPIO_NUM_6
+#define OLED_CS_PIN     GPIO_NUM_7
+#define OLED_DC_PIN     GPIO_NUM_5
+#define OLED_RESET_PIN  GPIO_NUM_10
 
 #define OLED_HOST   SPI2_HOST
 
