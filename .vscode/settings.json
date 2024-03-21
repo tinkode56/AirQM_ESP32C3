@@ -34,6 +34,9 @@
         "sensirion_gas_index_algorithm.h": "c",
         "cstdlib": "c",
         "esp_assert.h": "c",
-        "soc_caps.h": "c"
+        "soc_caps.h": "c",
+        "modbus_params.h": "c",
+        "esp_log.h": "c",
+        "senseair_s8.h": "c"
     }
 }

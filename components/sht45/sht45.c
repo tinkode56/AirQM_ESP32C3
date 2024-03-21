@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-14 18:22:35 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-15 21:57:08
+ * @Last Modified time: 2024-03-20 21:35:11
  */
 #include <stdio.h>
 #include "esp_log.h"
@@ -111,6 +111,6 @@ void SHT45_Read(SHT45_Mode mode, uint16_t *temp_raw, float *temp_conv, uint16_t 
     *temp_conv = ((float)(*temp_raw) / 65535.0f) * 175.0f - 45.0f;
     *hum_conv = ((float)(*hum_raw) / 65535.0f) * 125.0f - 6.0f;
 
-    ESP_LOGI("SHT45_READ_T", "raw: %d phy: %f forSGP:%d", *temp_raw, *temp_conv, (uint16_t)((*temp_conv + 45.0f) / 175.0f * 65535.0f));
-    ESP_LOGI("SHT45_READ_RH", "raw: %d phy: %f forSGP:%d", *hum_raw, *hum_conv, (uint16_t)(*hum_conv / 100.0f * 65535.0f));
+    // ESP_LOGI("SHT45_READ_T", "raw: %d phy: %f forSGP:%d", *temp_raw, *temp_conv, (uint16_t)((*temp_conv + 45.0f) / 175.0f * 65535.0f));
+    // ESP_LOGI("SHT45_READ_RH", "raw: %d phy: %f forSGP:%d", *hum_raw, *hum_conv, (uint16_t)(*hum_conv / 100.0f * 65535.0f));
 }

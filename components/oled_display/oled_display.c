@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-02-29 18:23:15 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-02-29 20:38:14
+ * @Last Modified time: 2024-03-21 01:53:50
  */
 #include <stdio.h>
 #include "string.h"
@@ -48,13 +48,13 @@ void oled_init(void)
     memset(GDDRAM_frame, 0x00, GDDRAM_SIZE * 2);
 
 
-    ESP_LOGI(TAG, "Initialize SPI bus");
+    ESP_LOGI("oled_display", "Initialize SPI bus");
     ESP_ERROR_CHECK(spi_bus_initialize(OLED_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
-    ESP_LOGI(TAG, "Install panel IO");
+    ESP_LOGI("oled_display", "Install panel IO");
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)OLED_HOST, &io_config, &io_handle));
 
-    ESP_LOGI(TAG, "Install SSD1309 panel driver");
+    ESP_LOGI("oled_display", "Install SSD1309 panel driver");
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));

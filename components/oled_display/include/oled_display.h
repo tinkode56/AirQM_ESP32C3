@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-02-29 18:06:56 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-19 18:23:37
+ * @Last Modified time: 2024-03-21 01:53:35
  */
 #include <stdio.h>
 #include "esp_lcd_panel_io.h"
@@ -33,8 +33,6 @@
 #define LINES_PER_FRAME DISPLAY_HEIGHT / 8
 
 #define CHAR_2_GLYPH(c)  (c) ? ((c) - 0x20) : (c)
-
-static const char *TAG = "oled_display";
 
 // Frame buffer
 extern uint8_t * GDDRAM_frame;

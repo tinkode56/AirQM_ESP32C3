@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-15 14:00:51 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-19 23:43:16
+ * @Last Modified time: 2024-03-21 01:53:02
  */
 
 #include <stdio.h>
@@ -29,6 +29,7 @@ void vI2CDummyTask(void *pvParameters);
 void vSenseairTask(void *pvParameters);
 
 QueueHandle_t i2cdev_queue;
+QueueHandle_t s8_queue;
 
 TaskHandle_t xOledTaskHandle = NULL;
 TaskHandle_t xI2CDevTaskHandle = NULL;
@@ -42,6 +43,7 @@ void app_main(void)
 {
     // Create queue between i2c and oled task
     i2cdev_queue = xQueueCreate(3, sizeof(struct SHT45Message *));
+    s8_queue = xQueueCreate(3, sizeof(uint16_t));
     // create mutex for i2c hardware sharing
     xI2CMutex = xSemaphoreCreateMutex();
     
@@ -63,8 +65,8 @@ void app_main(void)
     xTaskCreate(vOledTask, "OLED TASK", 2560, NULL, 11, &xOledTaskHandle);
     configASSERT(xOledTaskHandle);
 
-    xTaskCreate(vI2CDummyTask, "DUMMY TASK", 2560, NULL, 11, &xI2CDummyTaskHandle);
-    configASSERT(xI2CDummyTaskHandle);
+    // xTaskCreate(vI2CDummyTask, "DUMMY TASK", 2560, NULL, 11, &xI2CDummyTaskHandle);
+    // configASSERT(xI2CDummyTaskHandle);
 
     xTaskCreate(vSenseairTask, "SENSEAIR TASK", 2560, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
     configASSERT(xSenseairTaskHandle);
@@ -96,6 +98,7 @@ void vOledTask(void *pvParameters)
     char nox_buff[6] = "wait ";
 
     struct I2CDevMessage *pxMessage;
+    uint16_t co2_ppm;
 
     oled_init();
     
@@ -141,7 +144,15 @@ void vOledTask(void *pvParameters)
             }
         }
 
-        sprintf(co2_buff, "%5d", 0);
+        if (s8_queue != 0)
+        {
+            if (xQueueReceive(s8_queue, &co2_ppm, (TickType_t) 10))
+            {
+                sprintf(co2_buff, "%5d", co2_ppm);
+            }
+        }
+
+
         sprintf(pm25_buff, "%5d", 0);
 
         oled_draw_text(temp_buff, 1, 0);
@@ -221,13 +232,13 @@ void vI2CDevTask(void *pvParameters)
             // Release mutex
             xSemaphoreGive(xI2CMutex);
 
-            ESP_LOGI("SGP", "RAW VOC %d, NOx %d", sgp41_voc_raw, sgp41_nox_raw);
+            // ESP_LOGI("SGP", "RAW VOC %d, NOx %d", sgp41_voc_raw, sgp41_nox_raw);
 
             // Use Sensirion Algorithm to get VOC and NOx indices
             GasIndexAlgorithm_process(&voc_params, sgp41_voc_raw, &pxMessage->voc_index_value);
             GasIndexAlgorithm_process(&nox_params, sgp41_nox_raw, &pxMessage->nox_index_value);
             
-            ESP_LOGI("SGP", "VOC %ld, NOx %ld", pxMessage->voc_index_value, pxMessage->nox_index_value);
+            // ESP_LOGI("SGP", "VOC %ld, NOx %ld", pxMessage->voc_index_value, pxMessage->nox_index_value);
 
             if (i2cdev_queue != 0)
             {
@@ -257,10 +268,40 @@ void vI2CDummyTask(void *pvParameters)
 
 void vSenseairTask(void *pvParameters)
 {
-    SenseairS8Init();
+    // uint8_t cal_status;
+    uint16_t co2_value, status;
+    uint16_t abc, memmap_ver, fw_ver;
+    uint32_t sens_type_id, sens_id;
+    
+    SenseairS8_Init();
+    
+    // cal_status = S8_BgCalibration(CO2_BG_CAL);
+    // ESP_LOGI("S8 TASK", "Calibration status %d", cal_status);
+    
+    S8_ReadSensorTypeID(&sens_type_id);
+    ESP_LOGI("S8 TASK", "Sensor Type ID 0x%08jx", (uintmax_t)sens_type_id);
+
+    S8_ReadABC(&abc);
+    ESP_LOGI("S8 TASK", "ABC period 0x%04x, %d hours", abc, abc);
+
+    S8_ReadMemMapVers(&memmap_ver);
+    ESP_LOGI("S8 TASK", "Memory Mapping ver 0x%04x", memmap_ver);
+
+    S8_ReadFWVers(&fw_ver);
+    ESP_LOGI("S8 TASK", "Firmware ver 0x%04x", fw_ver);
+
+    S8_ReadSensorID(&sens_id);
+    ESP_LOGI("S8 TASK", "Sensor ID (SN) 0x%08jx", (uintmax_t)sens_id);
+    
     for( ;; )
     {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(4000));
+        S8_ReadCO2andStatus(&co2_value, &status);
+        
+        if ((s8_queue != 0) && (!CHECK_ERROR_ANY(status)))
+            {
+                xQueueSendToBack(s8_queue, (void *) &co2_value, (TickType_t) 0);
+            }
     }
 }
 
