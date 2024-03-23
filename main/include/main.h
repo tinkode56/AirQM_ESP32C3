@@ -12,3 +12,22 @@ struct I2CDevMessage
     float temp_phy;
     float hum_phy;
 } xI2CDevMessage;
+
+struct PMSRecvMessage
+{
+    uint16_t frame_len;
+    uint16_t pm10_std;
+    uint16_t pm25_std;
+    uint16_t pm100_std;
+    uint16_t pm10_env;
+    uint16_t pm25_env;
+    uint16_t pm100_env;
+    uint16_t particles_03um;
+    uint16_t particles_05um;
+    uint16_t particles_10um;
+    uint16_t particles_25um;
+    uint16_t particles_50um;
+    uint16_t particles_100um;
+    uint16_t dummy;
+    uint16_t checksum;
+} xPMSRecvMessage;

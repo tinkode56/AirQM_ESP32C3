@@ -44,8 +44,8 @@ uint8_t page_changed[8] = { 0 };
 
 void oled_init(void)
 {
-    GDDRAM_frame = heap_caps_malloc(GDDRAM_SIZE * 2, MALLOC_CAP_DMA);
-    memset(GDDRAM_frame, 0x00, GDDRAM_SIZE * 2);
+    GDDRAM_frame = heap_caps_malloc(GDDRAM_SIZE, MALLOC_CAP_DMA);
+    memset(GDDRAM_frame, 0x00, GDDRAM_SIZE);
 
 
     ESP_LOGI("oled_display", "Initialize SPI bus");
@@ -143,8 +143,6 @@ void oled_flush(void)
                 ESP_ERROR_CHECK(esp_lcd_panel_io_tx_color(io_handle, -1, &GDDRAM_frame[DISPLAY_WIDTH * page], DISPLAY_WIDTH));
             }
         }
-        // Current buffer becomes old buffer
-        memcpy(&GDDRAM_frame[GDDRAM_SIZE], GDDRAM_frame, GDDRAM_SIZE);
         // Reset page status
         memset(page_changed, 0, 8);
     }

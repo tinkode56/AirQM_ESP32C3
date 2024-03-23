@@ -37,6 +37,11 @@
         "soc_caps.h": "c",
         "modbus_params.h": "c",
         "esp_log.h": "c",
-        "senseair_s8.h": "c"
+        "senseair_s8.h": "c",
+        "pms5003.h": "c",
+        "stdio.h": "c",
+        "stdint.h": "c",
+        "queue.h": "c",
+        "uart.h": "c"
     }
 }
