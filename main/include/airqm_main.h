@@ -2,8 +2,10 @@
  * @Author: calin.acr 
  * @Date: 2024-03-15 19:23:55 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-16 01:34:59
+ * @Last Modified time: 2024-03-25 17:35:24
  */
+#if !defined(_AIRQM_MAIN_H)
+#define _AIRQM_MAIN_H
 
 struct I2CDevMessage
 {
@@ -31,3 +33,5 @@ struct PMSRecvMessage
     uint16_t dummy;
     uint16_t checksum;
 } xPMSRecvMessage;
+
+#endif // _AIRQM_MAIN_H

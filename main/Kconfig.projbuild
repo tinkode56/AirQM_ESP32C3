@@ -1,0 +1,172 @@
+menu "AirQM Custom Settings"
+
+    choice AIRQM_PROV_TRANSPORT
+        bool "Provisioning Transport"
+        default AIRQM_PROV_TRANSPORT_SOFTAP if IDF_TARGET_ESP32S2
+        default AIRQM_PROV_TRANSPORT_BLE
+        help
+            Wi-Fi provisioning component offers both, SoftAP and BLE transports. Choose any one.
+
+        config AIRQM_PROV_TRANSPORT_BLE
+            bool "BLE"
+            select BT_ENABLED
+            depends on !IDF_TARGET_ESP32S2
+        config AIRQM_PROV_TRANSPORT_SOFTAP
+            bool "Soft AP"
+            select LWIP_IPV4
+    endchoice
+
+    choice AIRQM_PROV_SECURITY_VERSION
+        bool "Protocomm security version"
+        default AIRQM_PROV_SECURITY_VERSION_2
+        help
+            Wi-Fi provisioning component offers 3 security versions.
+            The example offers a choice between security version 1 and 2.
+
+        config AIRQM_PROV_SECURITY_VERSION_1
+            bool "Security version 1"
+            select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+
+        config AIRQM_PROV_SECURITY_VERSION_2
+            bool "Security version 2"
+            select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+    endchoice
+
+    choice AIRQM_PROV_MODE
+        bool "Security version 2 mode"
+        depends on AIRQM_PROV_SECURITY_VERSION_2
+        default AIRQM_PROV_SEC2_DEV_MODE
+
+        config AIRQM_PROV_SEC2_DEV_MODE
+            bool "Security version 2 development mode"
+            depends on AIRQM_PROV_SECURITY_VERSION_2
+            help
+                This enables the development mode for
+                security version 2.
+                Please note that this mode is NOT recommended for production purpose.
+
+        config AIRQM_PROV_SEC2_PROD_MODE
+            bool "Security version 2 production mode"
+            depends on AIRQM_PROV_SECURITY_VERSION_2
+            help
+                This enables the production mode for
+                security version 2.
+    endchoice
+
+    config AIRQM_PROV_TRANSPORT
+        int
+        default 1 if AIRQM_PROV_TRANSPORT_BLE
+        default 2 if AIRQM_PROV_TRANSPORT_SOFTAP
+
+    config AIRQM_RESET_PROVISIONED
+        bool
+        default n
+        prompt "Reset provisioned status of the device"
+        help
+            This erases the NVS to reset provisioned status of the device on every reboot.
+            Provisioned status is determined by the Wi-Fi STA configuration, saved on the NVS.
+
+    config AIRQM_RESET_PROV_MGR_ON_FAILURE
+        bool
+        default y
+        prompt "Reset provisioned credentials and state machine after session failure"
+        help
+            Enable reseting provisioned credentials and state machine after session failure.
+            This will restart the provisioning service after retries are exhausted.
+
+    config AIRQM_PROV_MGR_MAX_RETRY_CNT
+        int
+        default 5
+        prompt "Max retries before reseting provisioning state machine"
+        depends on AIRQM_RESET_PROV_MGR_ON_FAILURE
+        help
+            Set the Maximum retry to avoid reconnecting to an inexistent AP or if credentials
+            are misconfigured. Provisioned credentials are erased and internal state machine
+            is reset after this threshold is reached.
+
+    config AIRQM_PROV_SHOW_QR
+        bool "Show provisioning QR code"
+        default y
+        help
+            Show the QR code for provisioning.
+
+    config AIRQM_PROV_USING_BLUEDROID
+        bool
+        depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
+        select BT_BLE_42_FEATURES_SUPPORTED
+        default y
+        help
+            This enables BLE 4.2 features for Bluedroid.
+
+    config AIRQM_REPROVISIONING
+        bool "Re-provisioning"
+        help
+            Enable re-provisioning - allow the device to provision for new credentials
+            after previous successful provisioning.
+
+    config AIRQM_INFLUXDB_HOST
+        string "InfluxDB host"
+        default "influxdb.localdomain"
+        help
+            InfluxDB hostname.
+    
+    config AIRQM_INFLUXDB_PORT
+        int "InfluxDB port"
+        default 8086
+        help
+            InfluxDB port.   
+
+    config AIRQM_INFLUXDB_PATH
+        string "InfluxDB path"
+        default "/api/v2/write"
+        help
+            InfluxDB path.
+    
+    choice AIRQM_INFLUXDB_VERSION
+        prompt "InfluxDB version"
+        default ESP_INFLUXDB_VERSION_V1
+        help
+            InfluxDB version (v1 or v2, only v1.8+ supported for now.)
+        config AIRQM_INFLUXDB_VERSION_V1
+            bool "1.8+"
+        config AIRQM_INFLUXDB_VERSION_V2
+            bool "2.x"
+    endchoice
+
+    config AIRQM_INFLUXDB_USERNAME
+        string "InfluxDB username"
+        default "username"
+        help
+            InfluxDB username.
+
+    config AIRQM_INFLUXDB_PASSWORD
+        string "InfluxDB password"
+        default "password"
+        help
+            InfluxDB password.
+
+    config AIRQM_INFLUXDB_ORG
+        string "InfluxDB organization ID (v2)"
+        default "1a2b3c4d5e6f7g"
+        help
+            InfluxDB organization ID.
+
+    config AIRQM_INFLUXDB_BUCKET
+        string "InfluxDB bucket (v2)"
+        default "airquality"
+        help
+            InfluxDB organization ID.                               
+
+    # Find your TZ string from: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+    config AIRQM_NTP_TZ
+        string "NTP timezone"
+        default "EET-2EEST,M3.5.0/3,M10.5.0/4"
+        help
+            Timezone.
+
+    config AIRQM_NTP_SERVER
+        string "NTP server host"
+        default "pool.ntp.org"
+        help
+            NTP server hostname.
+endmenu

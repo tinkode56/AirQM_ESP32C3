@@ -2,8 +2,12 @@
  * @Author: calin.acr 
  * @Date: 2024-02-29 18:06:56 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-21 01:53:35
+ * @Last Modified time: 2024-03-25 17:29:59
  */
+
+#if !defined(_OLED_DISPLAY_H)
+#define _OLED_DISPLAY_H
+
 #include <stdio.h>
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
@@ -55,3 +59,5 @@ void oled_flush(void);
 // 21 characters per line, 8 lines
 void oled_draw_glyph(char glyph, uint8_t row, uint8_t column);
 void oled_draw_text(char string[], uint8_t row, uint8_t column);
+
+#endif // _OLED_DISPLAY_H

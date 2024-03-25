@@ -2,8 +2,11 @@
  * @Author: calin.acr 
  * @Date: 2024-03-19 16:22:34 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-22 20:52:09
+ * @Last Modified time: 2024-03-25 17:29:16
  */
+
+#if !defined(_SENSEAIR_S8_H)
+#define _SENSEAIR_S8_H
 
 #include <stdio.h>
 #include <string.h>
@@ -84,3 +87,5 @@ void S8_ReadSensorTypeID(uint32_t *value);
 void S8_ReadMemMapVers(uint16_t *value);
 void S8_ReadFWVers(uint16_t *value);
 void S8_ReadSensorID(uint32_t *value);
+
+#endif // _SENSEAIR_S8_H

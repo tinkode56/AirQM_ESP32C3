@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-15 14:00:51 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-21 01:53:02
+ * @Last Modified time: 2024-03-25 17:46:04
  */
 
 #include <stdio.h>
@@ -21,13 +21,13 @@
 #include "esp_random.h"
 #include "sensirion_gas_index_algorithm.h"
 #include "senseair_s8.h"
-#include "main.h"
+#include "airqm_main.h"
 #include "pms5003.h"
-
-void vOledTask(void *pvParameters);
-void vI2CDevTask(void *pvParameters);
-void vI2CDummyTask(void *pvParameters);
-void vSenseairTask(void *pvParameters);
+#include "nvs_flash.h"
+#include "airqm_wifi.h"
+#include "airqm_influxdb.h"
+#include "esp_sntp.h"
+#include "esp_netif_sntp.h"
 
 QueueHandle_t i2cdev_queue;
 QueueHandle_t s8_queue;
@@ -41,9 +41,27 @@ TaskHandle_t xPMSTaskHandle = NULL;
 
 SemaphoreHandle_t xI2CMutex = NULL;
 
+void vOledTask(void *pvParameters);
+void vI2CDevTask(void *pvParameters);
+void vI2CDummyTask(void *pvParameters);
+void vSenseairTask(void *pvParameters);
+
+void SyncTime(void);
+
 
 void app_main(void)
 {
+    // Wifi provisioning and connection init
+    airqm_wifiprov_init();
+
+    // Set timezone
+    ESP_LOGI("NTP-Sync", "Timezone is set to: %s", CONFIG_AIRQM_NTP_TZ);
+    setenv("TZ", CONFIG_AIRQM_NTP_TZ, 1);
+    tzset();
+
+    // Synchronize time
+    SyncTime();
+
     // Create queue between i2c and oled task
     i2cdev_queue = xQueueCreate(3, sizeof(struct I2CDevMessage *));
     s8_queue = xQueueCreate(3, sizeof(uint16_t));
@@ -66,28 +84,28 @@ void app_main(void)
     xTaskCreate(vI2CDevTask, "I2CDev TASK", 2560, (void *)bus_handle, 11, &xI2CDevTaskHandle);
     configASSERT(xI2CDevTaskHandle);
 
-    xTaskCreate(vOledTask, "OLED TASK", 2560, NULL, 11, &xOledTaskHandle);
+    xTaskCreate(vOledTask, "OLED TASK", 4096, NULL, 11, &xOledTaskHandle);
     configASSERT(xOledTaskHandle);
 
     // xTaskCreate(vI2CDummyTask, "DUMMY TASK", 2560, NULL, 11, &xI2CDummyTaskHandle);
     // configASSERT(xI2CDummyTaskHandle);
 
-    // xTaskCreate(vSenseairTask, "SENSEAIR TASK", 2560, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
-    // configASSERT(xSenseairTaskHandle);
+    xTaskCreate(vSenseairTask, "SENSEAIR TASK", 2560, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
+    configASSERT(xSenseairTaskHandle);
 
     xTaskCreate(PMS_MainTask, "PMS5003 TASK", 2560, (void *)pms_queue, tskIDLE_PRIORITY, &xPMSTaskHandle);
     configASSERT(xPMSTaskHandle);
 
-    // for ( ;; )
-    // {
+    for ( ;; )
+    {
         /* Stack size measurements */
         // ESP_LOGE("APP_MAIN", "Oled task stack unused: %d", uxTaskGetStackHighWaterMark(xOledTaskHandle));
         // ESP_LOGE("APP_MAIN", "I2C task stack unused: %d", uxTaskGetStackHighWaterMark(xI2CDevTaskHandle));
         // ESP_LOGE("APP_MAIN", "Dummy task stack unused: %d", uxTaskGetStackHighWaterMark(xI2CDummyTaskHandle));
         // ESP_LOGE("APP_MAIN", "Senseair task stack unused: %d", uxTaskGetStackHighWaterMark(xSenseairTaskHandle));
         // ESP_LOGE("APP_MAIN", "PMS5003 task stack unused: %d", uxTaskGetStackHighWaterMark(xPMSTaskHandle));
-        // vTaskDelay(pdMS_TO_TICKS(5000));
-    // }
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
 }
 
 void vOledTask(void *pvParameters)
@@ -107,10 +125,16 @@ void vOledTask(void *pvParameters)
     uint16_t co2_ppm;
     struct PMSRecvMessage *pxPMSMessage;
 
+    AirQM_metrics allMetrics = { 0 };
+
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(60000);
 
     xLastWakeTime = xTaskGetTickCount();
+
+    // DEBUG
+    // write_influxdb(&allMetrics);
+    // END DEBUG
 
     oled_init();
     
@@ -164,6 +188,11 @@ void vOledTask(void *pvParameters)
                 oled_draw_text(hum_buff, 1, 12);
                 oled_draw_text(tvoc_buff, 6, 7);
                 oled_draw_text(nox_buff, 7, 7);
+                // Update allMetrict to be sent to InfluxDB
+                allMetrics.temp_phy = pxMessage->temp_phy;
+                allMetrics.hum_phy = pxMessage->hum_phy;
+                allMetrics.voc_index_value = pxMessage->voc_index_value;
+                allMetrics.nox_index_value = pxMessage->nox_index_value;
             }
         }
 
@@ -175,6 +204,8 @@ void vOledTask(void *pvParameters)
                 sprintf(co2_buff, "%5d", co2_ppm);
                 // Write to GDDRAM
                 oled_draw_text(co2_buff, 2, 7); 
+                // Update allMetrict to be sent to InfluxDB
+                allMetrics.co2_val = co2_ppm;
             }
         }
 
@@ -190,12 +221,32 @@ void vOledTask(void *pvParameters)
                 oled_draw_text(pm10_buff, 3, 7);
                 oled_draw_text(pm25_buff, 4, 7);
                 oled_draw_text(pm100_buff, 5, 7);
+                // Update allMetrict to be sent to InfluxDB
+                allMetrics.pm10_std = pxPMSMessage->pm10_std;
+                allMetrics.pm25_std = pxPMSMessage->pm25_std;
+                allMetrics.pm100_std = pxPMSMessage->pm100_std;
+                allMetrics.pm10_env = pxPMSMessage->pm10_env;
+                allMetrics.pm25_env = pxPMSMessage->pm25_env;
+                allMetrics.pm100_env = pxPMSMessage->pm100_env;
+                allMetrics.particles_03um = pxPMSMessage->particles_03um;
+                allMetrics.particles_05um = pxPMSMessage->particles_05um;
+                allMetrics.particles_10um = pxPMSMessage->particles_10um;
+                allMetrics.particles_25um = pxPMSMessage->particles_25um;
+                allMetrics.particles_50um = pxPMSMessage->particles_50um;
+                allMetrics.particles_100um = pxPMSMessage->particles_100um;
             }
         }
 
         if (xTaskGetTickCount() - xLastWakeTime >= xFrequency)
         {
-            ESP_LOGE("OLED->WIFI", "Sending data to wifi task");
+            ESP_LOGW("OLED->WIFI", "Pushing data to InfluxDB");
+
+            
+            // Write data into InfluxDB
+            write_influxdb(&allMetrics);
+            // Re-sync with NTP server
+            SyncTime();
+
             xLastWakeTime = xTaskGetTickCount();
         }
 
@@ -320,3 +371,45 @@ void vSenseairTask(void *pvParameters)
     }
 }
 
+void SyncTime(void)
+{
+    
+    // Synchronize time with NTP
+    if ( esp_sntp_enabled() ) {
+        esp_sntp_stop();
+    }
+    esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
+    ESP_LOGI("NTP-Sync", "Getting time via NTP from: %s", CONFIG_AIRQM_NTP_SERVER);
+    esp_sntp_setservername(0, CONFIG_AIRQM_NTP_SERVER);
+    
+    const int total_max_retries = 3;
+    int total_retries = 0;
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    do {
+        esp_sntp_init();
+
+        int retry = 0;
+
+        // NTP request is sent every 15 seconds, so wait 25 seconds for sync.
+        const int retry_count = 10;
+        while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
+            ESP_LOGI("NTP-Sync", "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+        if (retry == retry_count) {
+            total_retries += 1;
+            esp_sntp_stop();
+        } else {
+            break;
+        }
+    } while (total_retries < total_max_retries);
+    assert(total_retries < total_max_retries);
+
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    char strftime_buf[64];
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    ESP_LOGI("NTP-Sync", "The current date/time is: %s", strftime_buf);
+}

@@ -42,6 +42,17 @@
         "stdio.h": "c",
         "stdint.h": "c",
         "queue.h": "c",
-        "uart.h": "c"
+        "uart.h": "c",
+        "scheme_ble.h": "c",
+        "esp_event.h": "c",
+        "esp_wifi.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "compare": "cpp",
+        "cstdint": "cpp",
+        "freertos.h": "c",
+        "qrcode.h": "c",
+        "esp_http_client.h": "c"
     }
 }
