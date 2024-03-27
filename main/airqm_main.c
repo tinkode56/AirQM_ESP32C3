@@ -32,19 +32,22 @@
 QueueHandle_t i2cdev_queue;
 QueueHandle_t s8_queue;
 QueueHandle_t pms_queue;
+QueueHandle_t oled_queue;
+QueueHandle_t influxdb_queue;
 
 TaskHandle_t xOledTaskHandle = NULL;
 TaskHandle_t xI2CDevTaskHandle = NULL;
-TaskHandle_t xI2CDummyTaskHandle = NULL;
 TaskHandle_t xSenseairTaskHandle = NULL;
 TaskHandle_t xPMSTaskHandle = NULL;
+TaskHandle_t xDataManagerHandle = NULL;
+TaskHandle_t xInfluxManagerHandle = NULL;
 
-SemaphoreHandle_t xI2CMutex = NULL;
 
 void vOledTask(void *pvParameters);
 void vI2CDevTask(void *pvParameters);
-void vI2CDummyTask(void *pvParameters);
 void vSenseairTask(void *pvParameters);
+void vDataManagerTask(void *pvParameters);
+void vInfluxDBManagerTask(void *pvParameters);
 
 void SyncTime(void);
 
@@ -54,20 +57,12 @@ void app_main(void)
     // Wifi provisioning and connection init
     airqm_wifiprov_init();
 
-    // Set timezone
-    ESP_LOGI("NTP-Sync", "Timezone is set to: %s", CONFIG_AIRQM_NTP_TZ);
-    setenv("TZ", CONFIG_AIRQM_NTP_TZ, 1);
-    tzset();
-
-    // Synchronize time
-    SyncTime();
-
     // Create queue between i2c and oled task
     i2cdev_queue = xQueueCreate(3, sizeof(struct I2CDevMessage *));
     s8_queue = xQueueCreate(3, sizeof(uint16_t));
     pms_queue = xQueueCreate(3, sizeof(struct PMSData *));
-    // create mutex for i2c hardware sharing
-    xI2CMutex = xSemaphoreCreateMutex();
+    oled_queue = xQueueCreate(3, sizeof(AirQM_metrics));
+    influxdb_queue = xQueueCreate(3, sizeof(AirQM_metrics));
     
     // Initialize the I2C master bus
     i2c_master_bus_config_t conf = {
@@ -81,14 +76,17 @@ void app_main(void)
     i2c_master_bus_handle_t bus_handle;
     ESP_ERROR_CHECK(i2c_new_master_bus(&conf, &bus_handle));
 
+    xTaskCreate(vDataManagerTask, "DataMgr TASK", 2560, NULL, 11, &xDataManagerHandle);
+    configASSERT(xDataManagerHandle);
+
+    xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", 4096, NULL, 11, &xInfluxManagerHandle);
+    configASSERT(xInfluxManagerHandle);
+
     xTaskCreate(vI2CDevTask, "I2CDev TASK", 2560, (void *)bus_handle, 11, &xI2CDevTaskHandle);
     configASSERT(xI2CDevTaskHandle);
 
     xTaskCreate(vOledTask, "OLED TASK", 4096, NULL, 11, &xOledTaskHandle);
     configASSERT(xOledTaskHandle);
-
-    // xTaskCreate(vI2CDummyTask, "DUMMY TASK", 2560, NULL, 11, &xI2CDummyTaskHandle);
-    // configASSERT(xI2CDummyTaskHandle);
 
     xTaskCreate(vSenseairTask, "SENSEAIR TASK", 2560, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
     configASSERT(xSenseairTaskHandle);
@@ -99,11 +97,12 @@ void app_main(void)
     for ( ;; )
     {
         /* Stack size measurements */
-        // ESP_LOGE("APP_MAIN", "Oled task stack unused: %d", uxTaskGetStackHighWaterMark(xOledTaskHandle));
-        // ESP_LOGE("APP_MAIN", "I2C task stack unused: %d", uxTaskGetStackHighWaterMark(xI2CDevTaskHandle));
-        // ESP_LOGE("APP_MAIN", "Dummy task stack unused: %d", uxTaskGetStackHighWaterMark(xI2CDummyTaskHandle));
-        // ESP_LOGE("APP_MAIN", "Senseair task stack unused: %d", uxTaskGetStackHighWaterMark(xSenseairTaskHandle));
-        // ESP_LOGE("APP_MAIN", "PMS5003 task stack unused: %d", uxTaskGetStackHighWaterMark(xPMSTaskHandle));
+        ESP_LOGE("APP_MAIN", "Oled task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xOledTaskHandle));
+        ESP_LOGE("APP_MAIN", "I2C task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xI2CDevTaskHandle));
+        ESP_LOGE("APP_MAIN", "Senseair task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xSenseairTaskHandle));
+        ESP_LOGE("APP_MAIN", "PMS5003 task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xPMSTaskHandle));
+        ESP_LOGE("APP_MAIN", "DataMgr task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xDataManagerHandle));
+        ESP_LOGE("APP_MAIN", "InfluxMgr task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xInfluxManagerHandle));
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
@@ -121,20 +120,7 @@ void vOledTask(void *pvParameters)
     char tvoc_buff[6] = "wait ";
     char nox_buff[6] = "wait ";
 
-    struct I2CDevMessage *pxMessage;
-    uint16_t co2_ppm;
-    struct PMSRecvMessage *pxPMSMessage;
-
     AirQM_metrics allMetrics = { 0 };
-
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = pdMS_TO_TICKS(60000);
-
-    xLastWakeTime = xTaskGetTickCount();
-
-    // DEBUG
-    // write_influxdb(&allMetrics);
-    // END DEBUG
 
     oled_init();
     
@@ -144,7 +130,6 @@ void vOledTask(void *pvParameters)
     oled_draw_text("~C", 1, 6);
     oled_draw_text(hum_buff, 1, 12);
     oled_draw_text("%RH", 1, 18);
-
     
     oled_draw_text("CO2", 2, 0);
     oled_draw_text(co2_buff, 2, 7);
@@ -173,86 +158,33 @@ void vOledTask(void *pvParameters)
     for( ;; )
     {
         // Task body
-
-        if (i2cdev_queue != 0)
+        if (oled_queue != 0)
         {
-            if (xQueueReceive(i2cdev_queue, &(pxMessage), (TickType_t) 10))
+            if (xQueueReceive(oled_queue, &(allMetrics), (TickType_t) 10))
             {
                 // Convert values to strings
-                sprintf(temp_buff, "%6.2f", pxMessage->temp_phy);
-                sprintf(hum_buff, "%6.2f", pxMessage->hum_phy);
-                sprintf(tvoc_buff, "%5ld", pxMessage->voc_index_value);
-                sprintf(nox_buff, "%5ld", pxMessage->nox_index_value);
+                sprintf(temp_buff, "%6.2f", allMetrics.temp_phy);
+                sprintf(hum_buff, "%6.2f", allMetrics.hum_phy);
+                sprintf(tvoc_buff, "%5ld", allMetrics.voc_index_value);
+                sprintf(nox_buff, "%5ld", allMetrics.nox_index_value);
+                sprintf(co2_buff, "%5d", allMetrics.co2_val);
+                sprintf(pm10_buff, "%5d", allMetrics.pm10_std);
+                sprintf(pm25_buff, "%5d", allMetrics.pm25_std);
+                sprintf(pm100_buff, "%5d", allMetrics.pm100_std);
                 // Write to GDDRAM
                 oled_draw_text(temp_buff, 1, 0);
                 oled_draw_text(hum_buff, 1, 12);
                 oled_draw_text(tvoc_buff, 6, 7);
                 oled_draw_text(nox_buff, 7, 7);
-                // Update allMetrict to be sent to InfluxDB
-                allMetrics.temp_phy = pxMessage->temp_phy;
-                allMetrics.hum_phy = pxMessage->hum_phy;
-                allMetrics.voc_index_value = pxMessage->voc_index_value;
-                allMetrics.nox_index_value = pxMessage->nox_index_value;
-            }
-        }
-
-        if (s8_queue != 0)
-        {
-            if (xQueueReceive(s8_queue, &co2_ppm, (TickType_t) 10))
-            {
-                // Convert values to strings
-                sprintf(co2_buff, "%5d", co2_ppm);
-                // Write to GDDRAM
-                oled_draw_text(co2_buff, 2, 7); 
-                // Update allMetrict to be sent to InfluxDB
-                allMetrics.co2_val = co2_ppm;
-            }
-        }
-
-        if (pms_queue != 0)
-        {
-            if (xQueueReceive(pms_queue, &(pxPMSMessage), (TickType_t) 10))
-            {
-                // Convert values to strings
-                sprintf(pm10_buff, "%5d", (pxPMSMessage->pm10_std));
-                sprintf(pm25_buff, "%5d", (pxPMSMessage->pm25_std));
-                sprintf(pm100_buff, "%5d", (pxPMSMessage->pm100_std));
-                // Write to GDDRAM
+                oled_draw_text(co2_buff, 2, 7);
                 oled_draw_text(pm10_buff, 3, 7);
                 oled_draw_text(pm25_buff, 4, 7);
                 oled_draw_text(pm100_buff, 5, 7);
-                // Update allMetrict to be sent to InfluxDB
-                allMetrics.pm10_std = pxPMSMessage->pm10_std;
-                allMetrics.pm25_std = pxPMSMessage->pm25_std;
-                allMetrics.pm100_std = pxPMSMessage->pm100_std;
-                allMetrics.pm10_env = pxPMSMessage->pm10_env;
-                allMetrics.pm25_env = pxPMSMessage->pm25_env;
-                allMetrics.pm100_env = pxPMSMessage->pm100_env;
-                allMetrics.particles_03um = pxPMSMessage->particles_03um;
-                allMetrics.particles_05um = pxPMSMessage->particles_05um;
-                allMetrics.particles_10um = pxPMSMessage->particles_10um;
-                allMetrics.particles_25um = pxPMSMessage->particles_25um;
-                allMetrics.particles_50um = pxPMSMessage->particles_50um;
-                allMetrics.particles_100um = pxPMSMessage->particles_100um;
+                // Flush GDDRAM to display
+                oled_flush();
             }
-        }
-
-        if (xTaskGetTickCount() - xLastWakeTime >= xFrequency)
-        {
-            ESP_LOGW("OLED->WIFI", "Pushing data to InfluxDB");
-
             
-            // Write data into InfluxDB
-            write_influxdb(&allMetrics);
-            // Re-sync with NTP server
-            SyncTime();
-
-            xLastWakeTime = xTaskGetTickCount();
         }
-
-        oled_flush();
-        // vTaskDelay(pdMS_TO_TICKS(500));
-        // taskYIELD();
     }
 }
 
@@ -373,7 +305,6 @@ void vSenseairTask(void *pvParameters)
 
 void SyncTime(void)
 {
-    
     // Synchronize time with NTP
     if ( esp_sntp_enabled() ) {
         esp_sntp_stop();
@@ -393,7 +324,7 @@ void SyncTime(void)
 
         // NTP request is sent every 15 seconds, so wait 25 seconds for sync.
         const int retry_count = 10;
-        while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
+        while ((sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) && (++retry < retry_count)) {
             ESP_LOGI("NTP-Sync", "Waiting for system time to be set... (%d/%d)", retry, retry_count);
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
@@ -412,4 +343,128 @@ void SyncTime(void)
     char strftime_buf[64];
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI("NTP-Sync", "The current date/time is: %s", strftime_buf);
+}
+
+void vDataManagerTask(void *pvParameters)
+{
+    struct I2CDevMessage *pxMessage;
+    uint16_t co2_ppm;
+    struct PMSRecvMessage *pxPMSMessage;
+
+    AirQM_metrics allMetrics = { 0 };
+    bool isAnyMetricUpdated = false;
+
+    TickType_t xLastWakeTime;
+    // Frequency of data write in InfluxDB (1 min = 60000 ms)
+    const TickType_t xFrequency = pdMS_TO_TICKS(60000);
+
+    xLastWakeTime = xTaskGetTickCount();
+
+    for ( ;; )
+    {
+        if (i2cdev_queue != 0)
+        {
+            if (xQueueReceive(i2cdev_queue, &(pxMessage), (TickType_t) 10))
+            {
+                // Update allMetrict to be sent to InfluxDB
+                allMetrics.temp_phy = pxMessage->temp_phy;
+                allMetrics.hum_phy = pxMessage->hum_phy;
+                allMetrics.voc_index_value = pxMessage->voc_index_value;
+                allMetrics.nox_index_value = pxMessage->nox_index_value;
+                // Signal metric values have updated
+                isAnyMetricUpdated = true;
+            }
+        }
+
+        if (s8_queue != 0)
+        {
+            if (xQueueReceive(s8_queue, &co2_ppm, (TickType_t) 10))
+            {
+                // Update allMetrict to be sent to InfluxDB
+                allMetrics.co2_val = co2_ppm;
+                // Signal metric values have updated
+                isAnyMetricUpdated = true;
+            }
+        }
+
+        if (pms_queue != 0)
+        {
+            if (xQueueReceive(pms_queue, &(pxPMSMessage), (TickType_t) 10))
+            {
+                // Update allMetrict to be sent to InfluxDB
+                allMetrics.pm10_std = pxPMSMessage->pm10_std;
+                allMetrics.pm25_std = pxPMSMessage->pm25_std;
+                allMetrics.pm100_std = pxPMSMessage->pm100_std;
+                allMetrics.pm10_env = pxPMSMessage->pm10_env;
+                allMetrics.pm25_env = pxPMSMessage->pm25_env;
+                allMetrics.pm100_env = pxPMSMessage->pm100_env;
+                allMetrics.particles_03um = pxPMSMessage->particles_03um;
+                allMetrics.particles_05um = pxPMSMessage->particles_05um;
+                allMetrics.particles_10um = pxPMSMessage->particles_10um;
+                allMetrics.particles_25um = pxPMSMessage->particles_25um;
+                allMetrics.particles_50um = pxPMSMessage->particles_50um;
+                allMetrics.particles_100um = pxPMSMessage->particles_100um;
+                // Signal metric values have updated
+                isAnyMetricUpdated = true;
+            }
+        }
+
+        if (isAnyMetricUpdated)
+        {
+            // Send data to OLED
+            if (oled_queue != 0)
+            {
+                if(xQueueSendToBack(oled_queue, (void *) &allMetrics, (TickType_t) 0) != pdPASS)
+                {
+                    ESP_LOGE("AqmDataManager", "Failed to post the message to oled queue");
+                }
+                else
+                {
+                    isAnyMetricUpdated = false;
+                }
+            }
+        }
+
+        if (xTaskGetTickCount() - xLastWakeTime >= xFrequency)
+        {
+            // Send data to InfluxDB Manager
+            if (influxdb_queue != 0)
+            {
+                if(xQueueSendToBack(influxdb_queue, (void *) &allMetrics, (TickType_t) 0) != pdPASS)
+                {
+                    ESP_LOGE("AqmDataManager", "Failed to post the message to influxdb queue");
+                }
+            }
+            // Update last wake time with current time
+            xLastWakeTime = xTaskGetTickCount();
+        }
+    }
+    
+}
+
+void vInfluxDBManagerTask(void *pvParameters)
+{
+    AirQM_metrics allMetrics = { 0 };
+    
+    // Set timezone
+    ESP_LOGI("NTP-Sync", "Timezone is set to: %s", CONFIG_AIRQM_NTP_TZ);
+    setenv("TZ", CONFIG_AIRQM_NTP_TZ, 1);
+    tzset();
+
+    // Synchronize time
+    SyncTime();
+
+    for ( ;; )
+    {
+        if (influxdb_queue != 0)
+        {
+            if (xQueueReceive(influxdb_queue, &(allMetrics), (TickType_t) 10))
+            {
+                // Write data into InfluxDB
+                write_influxdb(&allMetrics);
+                // Re-sync with NTP server
+                SyncTime();
+            }
+        }
+    }
 }
