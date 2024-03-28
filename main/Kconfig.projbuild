@@ -124,7 +124,7 @@ menu "AirQM Custom Settings"
     
     choice AIRQM_INFLUXDB_VERSION
         prompt "InfluxDB version"
-        default ESP_INFLUXDB_VERSION_V1
+        default AIRQM_INFLUXDB_VERSION_V1
         help
             InfluxDB version (v1 or v2, only v1.8+ supported for now.)
         config AIRQM_INFLUXDB_VERSION_V1
