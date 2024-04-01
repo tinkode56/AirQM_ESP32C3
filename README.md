@@ -36,7 +36,7 @@ Starts a FreeRTOS task to print "Hello World".
 | GPIO_7   | Pin CS  |         |         |             |          |
 | GPIO_8   |         | Pin SDA | Pin SDA |             |          |
 | GPIO_9   |         | Pin SCL | Pin SCL |             |          |
-| GPIO_10  | Pin DC  |         |         |             |          |
+| GPIO_10  | Pin RES |         |         |             |          |
 | GPIO_20  |         |         |         | UART_TxD    |          |
 | GPIO_21  |         |         |         | UART_RxD    |          |
 ```

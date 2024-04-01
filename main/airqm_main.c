@@ -42,6 +42,14 @@ TaskHandle_t xPMSTaskHandle = NULL;
 TaskHandle_t xDataManagerHandle = NULL;
 TaskHandle_t xInfluxManagerHandle = NULL;
 
+/* Task stack sizes in bytes */
+const uint16_t oled_stack_size = 3000;
+const uint16_t i2c_stack_size = 3000;
+const uint16_t senseair_stack_size = 2800;
+const uint16_t pms_stack_size = 2800;
+const uint16_t datmgr_stack_size = 1500;
+const uint16_t influx_stack_size = 5000;
+
 
 void vOledTask(void *pvParameters);
 void vI2CDevTask(void *pvParameters);
@@ -76,22 +84,22 @@ void app_main(void)
     i2c_master_bus_handle_t bus_handle;
     ESP_ERROR_CHECK(i2c_new_master_bus(&conf, &bus_handle));
 
-    xTaskCreate(vDataManagerTask, "DataMgr TASK", 2560, NULL, 11, &xDataManagerHandle);
+    xTaskCreate(vDataManagerTask, "DataMgr TASK", datmgr_stack_size, NULL, 11, &xDataManagerHandle);
     configASSERT(xDataManagerHandle);
 
-    xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", 4096, NULL, 11, &xInfluxManagerHandle);
+    xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", influx_stack_size, NULL, 11, &xInfluxManagerHandle);
     configASSERT(xInfluxManagerHandle);
 
-    xTaskCreate(vI2CDevTask, "I2CDev TASK", 2560, (void *)bus_handle, 11, &xI2CDevTaskHandle);
+    xTaskCreate(vI2CDevTask, "I2CDev TASK", i2c_stack_size, (void *)bus_handle, 11, &xI2CDevTaskHandle);
     configASSERT(xI2CDevTaskHandle);
 
-    xTaskCreate(vOledTask, "OLED TASK", 4096, NULL, 11, &xOledTaskHandle);
+    xTaskCreate(vOledTask, "OLED TASK", oled_stack_size, NULL, 11, &xOledTaskHandle);
     configASSERT(xOledTaskHandle);
 
-    xTaskCreate(vSenseairTask, "SENSEAIR TASK", 2560, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
+    xTaskCreate(vSenseairTask, "SENSEAIR TASK", senseair_stack_size, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
     configASSERT(xSenseairTaskHandle);
 
-    xTaskCreate(PMS_MainTask, "PMS5003 TASK", 2560, (void *)pms_queue, tskIDLE_PRIORITY, &xPMSTaskHandle);
+    xTaskCreate(PMS_MainTask, "PMS5003 TASK", pms_stack_size, (void *)pms_queue, tskIDLE_PRIORITY, &xPMSTaskHandle);
     configASSERT(xPMSTaskHandle);
 
     for ( ;; )
