@@ -503,7 +503,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "AirQM_C3.step",
       "svg": "",
       "vrml": ""
     },

@@ -1387,6 +1387,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "fa0e6b52-6f5e-49d3-9ed1-f945fac3edc2")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Connector_PinSocket_2.54mm:PinSocket_1x06_P2.54mm_Vertical"
 		(layer "F.Cu")
@@ -2094,6 +2105,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "71efc056-3551-49c7-b205-151a4341a54f")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical"
 		(layer "F.Cu")
@@ -2563,6 +2585,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "ae381bdb-f1d8-4ba0-8b3c-7119a810c8c0")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "kibuzzard-66084210"
 		(layer "F.Cu")
@@ -2884,6 +2917,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "f6fa6328-9690-4919-99f4-e7fcf89cfc19")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "ws2812_airqm:ws2812_airqm"
 		(layer "F.Cu")
@@ -3065,6 +3109,17 @@
 			(pintype "input")
 			(thermal_bridge_angle 45)
 			(uuid "c81e6934-9bfd-4290-a6fb-c83e13aed413")
+		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
 		)
 	)
 	(footprint "esp32c3_supermini:MODULE_ESP32-C3_SUPERMINI"
@@ -3681,6 +3736,61 @@
 			(pintype "power_in")
 			(solder_mask_margin 0.102)
 			(uuid "6ab13d2b-6cb7-4870-98e5-ac56a776a843")
+		)
+		(model "${KIPRJMOD}/libraries/esp32c3_supermini/ESP32-C3 supermini v5.step"
+			(offset
+				(xyz -20 -6.5 6.35)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz -90 0 180)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x08_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz -7.6 9.9 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x08_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz 7.6 9.9 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x08_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz -7.6 9.9 9.54)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 -180 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x08_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz 7.6 9.9 9.54)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 -180 0)
+			)
 		)
 	)
 	(footprint "Capacitor_SMD:C_0603_1608Metric"
@@ -4964,6 +5074,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "d9a929aa-c1cd-476b-8084-139320ad3c2c")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Sensor:Senseair_S8_Up"
 		(layer "F.Cu")
@@ -5535,7 +5656,18 @@
 			(pintype "power_out")
 			(uuid "581422fd-a072-4643-b870-a450403a015e")
 		)
-		(model "${KICAD8_3DMODEL_DIR}/Sensor.3dshapes/Senseair_S8_Up.wrl"
+		(model "${KIPRJMOD}/libraries/senseair_s8/S8-004-0-0053.STEP"
+			(offset
+				(xyz 15 -5 11)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 90 0 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x04_P2.54mm_Vertical.wrl"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -5544,6 +5676,39 @@
 			)
 			(rotate
 				(xyz 0 0 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x05_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz 29.7 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x04_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz 0 0 9.5)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 -180 0)
+			)
+		)
+		(model "${KICAD8_3DMODEL_DIR}/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x05_P2.54mm_Vertical.wrl"
+			(offset
+				(xyz 29.7 0 9.5)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 -180 0)
 			)
 		)
 	)
@@ -5727,6 +5892,17 @@
 			(pintype "input")
 			(thermal_bridge_angle 45)
 			(uuid "43e6f7ca-0c76-4a66-9672-1953abbc9db4")
+		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
 		)
 	)
 	(footprint "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical"
@@ -6668,6 +6844,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "98ccd337-0141-4ece-bfef-0c7363a0b014")
 		)
+		(model "${KIPRJMOD}/libraries/tactile_switch/switch_airqm.step"
+			(offset
+				(xyz 0 -0.75 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 -180)
+			)
+		)
 	)
 	(footprint "kibuzzard-6608431D"
 		(layer "F.Cu")
@@ -7247,6 +7434,17 @@
 			(pintype "input")
 			(thermal_bridge_angle 45)
 			(uuid "41e52405-9b17-437c-8c14-78c11144e1ae")
+		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
 		)
 	)
 	(footprint "Capacitor_SMD:C_0603_1608Metric"
@@ -8110,6 +8308,17 @@
 			)
 			(rotate
 				(xyz 0 0 0)
+			)
+		)
+		(model "${KIPRJMOD}/libraries/oled_display/SSD1309 2.42_ OLED v2.step"
+			(offset
+				(xyz 20.3 -7.65 10.55)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 90 0 90)
 			)
 		)
 	)
@@ -9945,6 +10154,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "65325a5a-7696-4eb6-a470-ff736d5a7c68")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "kibuzzard-660842A3"
 		(layer "F.Cu")
@@ -10883,6 +11103,17 @@
 			(thermal_bridge_angle 45)
 			(uuid "f810e57f-ba04-412a-986e-9fd6a737e760")
 		)
+		(model "${KIPRJMOD}/libraries/ws2812_neopixel/ws2812_airqm.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "kibuzzard-66084324"
 		(layer "F.Cu")
@@ -11247,6 +11478,17 @@
 			(pintype "passive")
 			(thermal_bridge_angle 45)
 			(uuid "d57bd948-95f7-4111-9be0-ccf2c2c4c587")
+		)
+		(model "${KIPRJMOD}/libraries/tactile_switch/switch_airqm.step"
+			(offset
+				(xyz 0 -0.75 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 -180)
+			)
 		)
 	)
 	(footprint "Symbol:KiCad-Logo2_5mm_SilkScreen"
