@@ -1,5 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  espressif/led_strip: "^2.5.3"
   espressif/esp-modbus: "^1.0.13"
   qrcode: "^0.1.0"
   ## Required IDF version

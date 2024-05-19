@@ -11,8 +11,8 @@
 #include "driver/uart.h"
 
 #define PMS_UART_PORT UART_NUM_1
-#define PMS_UART_TX GPIO_NUM_0
-#define PMS_UART_RX GPIO_NUM_1
+#define PMS_UART_TX GPIO_NUM_1
+#define PMS_UART_RX GPIO_NUM_0
 
 #define PMS_UART_BUF_SIZE 256
 

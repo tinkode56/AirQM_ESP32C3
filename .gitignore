@@ -6,6 +6,8 @@ build/*
 *.lock
 managed_components/*
 partition_table/*
+hardware/AirQm_C3/AirQM_C3-backups
+hardware/AirQm_C3/production
 
 # Prerequisites
 *.d

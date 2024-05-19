@@ -18,6 +18,11 @@ Starts a FreeRTOS task to print "Hello World".
 | SGP41                     | [Aliexpress](https://www.aliexpress.com/item/4000037083952.html)      |
 | Oled Display              | [Aliexpress](https://www.aliexpress.com/item/32950307344.html)        |
 
+## Hardware
+Neodim magnet 2.5mm diameter, 1mm height
+Heat insert M2 x 3 x 3.2 for main board
+Screws M2 for PMS5003
+
 ## Pin connection matrix
 
 ```
@@ -26,8 +31,8 @@ Starts a FreeRTOS task to print "Hello World".
 | GND      | Pin GND | Pin GND | Pin GND | G0          | PIN2 GND |
 | 3V3      | Pin 3V3 | Pin 3V3 | Pin 3V3 |             |          |
 | 5V       |         |         |         | G+          | PIN1 VCC |
-| GPIO_0   |         |         |         |             | PIN4 RX  |
-| GPIO_1   |         |         |         |             | PIN5 TX  |
+| GPIO_0   |         |         |         |             | PIN4 TX  |
+| GPIO_1   |         |         |         |             | PIN5 RX  |
 | GPIO_2   |         |         |         |             |          |
 | GPIO_3   |         |         |         |             |          |
 | GPIO_4   | Pin SCK |         |         |             |          |

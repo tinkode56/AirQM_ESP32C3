@@ -28,6 +28,7 @@
 #include "airqm_influxdb.h"
 #include "esp_sntp.h"
 #include "esp_netif_sntp.h"
+#include "led_strip.h"
 
 QueueHandle_t i2cdev_queue;
 QueueHandle_t s8_queue;
@@ -41,6 +42,7 @@ TaskHandle_t xSenseairTaskHandle = NULL;
 TaskHandle_t xPMSTaskHandle = NULL;
 TaskHandle_t xDataManagerHandle = NULL;
 TaskHandle_t xInfluxManagerHandle = NULL;
+TaskHandle_t xNeopixelManagerHandle = NULL;
 
 /* Task stack sizes in bytes */
 const uint16_t oled_stack_size = 3000;
@@ -49,6 +51,7 @@ const uint16_t senseair_stack_size = 2800;
 const uint16_t pms_stack_size = 2800;
 const uint16_t datmgr_stack_size = 1500;
 const uint16_t influx_stack_size = 5000;
+const uint16_t neopixel_stack_size = 2000;
 
 
 void vOledTask(void *pvParameters);
@@ -56,6 +59,7 @@ void vI2CDevTask(void *pvParameters);
 void vSenseairTask(void *pvParameters);
 void vDataManagerTask(void *pvParameters);
 void vInfluxDBManagerTask(void *pvParameters);
+void vNeopixelManagerTask(void *pvParameters);
 
 void SyncTime(void);
 
@@ -63,7 +67,7 @@ void SyncTime(void);
 void app_main(void)
 {
     // Wifi provisioning and connection init
-    airqm_wifiprov_init();
+    // airqm_wifiprov_init();
 
     // Create queue between i2c and oled task
     i2cdev_queue = xQueueCreate(3, sizeof(struct I2CDevMessage *));
@@ -87,8 +91,8 @@ void app_main(void)
     xTaskCreate(vDataManagerTask, "DataMgr TASK", datmgr_stack_size, NULL, 11, &xDataManagerHandle);
     configASSERT(xDataManagerHandle);
 
-    xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", influx_stack_size, NULL, 11, &xInfluxManagerHandle);
-    configASSERT(xInfluxManagerHandle);
+    // xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", influx_stack_size, NULL, 11, &xInfluxManagerHandle);
+    // configASSERT(xInfluxManagerHandle);
 
     xTaskCreate(vI2CDevTask, "I2CDev TASK", i2c_stack_size, (void *)bus_handle, 11, &xI2CDevTaskHandle);
     configASSERT(xI2CDevTaskHandle);
@@ -102,6 +106,9 @@ void app_main(void)
     xTaskCreate(PMS_MainTask, "PMS5003 TASK", pms_stack_size, (void *)pms_queue, tskIDLE_PRIORITY, &xPMSTaskHandle);
     configASSERT(xPMSTaskHandle);
 
+    xTaskCreate(vNeopixelManagerTask, "Neopixel TASK", neopixel_stack_size, NULL, tskIDLE_PRIORITY, &xNeopixelManagerHandle);
+    configASSERT(xNeopixelManagerHandle);
+
     for ( ;; )
     {
         /* Stack size measurements */
@@ -111,6 +118,7 @@ void app_main(void)
         ESP_LOGE("APP_MAIN", "PMS5003 task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xPMSTaskHandle));
         ESP_LOGE("APP_MAIN", "DataMgr task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xDataManagerHandle));
         ESP_LOGE("APP_MAIN", "InfluxMgr task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xInfluxManagerHandle));
+        ESP_LOGE("APP_MAIN", "NeopixelMgr task stack unused bytes: %d", uxTaskGetStackHighWaterMark(xNeopixelManagerHandle));
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
@@ -438,10 +446,10 @@ void vDataManagerTask(void *pvParameters)
             // Send data to InfluxDB Manager
             if (influxdb_queue != 0)
             {
-                if(xQueueSendToBack(influxdb_queue, (void *) &allMetrics, (TickType_t) 0) != pdPASS)
-                {
-                    ESP_LOGE("AqmDataManager", "Failed to post the message to influxdb queue");
-                }
+                // if(xQueueSendToBack(influxdb_queue, (void *) &allMetrics, (TickType_t) 0) != pdPASS)
+                // {
+                //     ESP_LOGE("AqmDataManager", "Failed to post the message to influxdb queue");
+                // }
             }
             // Update last wake time with current time
             xLastWakeTime = xTaskGetTickCount();
@@ -474,5 +482,60 @@ void vInfluxDBManagerTask(void *pvParameters)
                 SyncTime();
             }
         }
+    }
+}
+
+#define PIXEL_COUNT  10
+#define NEOPIXEL_PIN GPIO_NUM_3
+
+
+void vNeopixelManagerTask(void *pvParameters)
+{  
+
+    /* LED strip initialization with the GPIO and pixels number*/
+    led_strip_config_t strip_config = {
+        .strip_gpio_num = NEOPIXEL_PIN, // The GPIO that connected to the LED strip's data line
+        .max_leds = PIXEL_COUNT, // The number of LEDs in the strip,
+        .led_pixel_format = LED_PIXEL_FORMAT_GRB, // Pixel format of your LED strip
+        .led_model = LED_MODEL_WS2812, // LED strip model
+        .flags.invert_out = false, // whether to invert the output signal (useful when your hardware has a level inverter)
+    };
+
+    led_strip_rmt_config_t rmt_config = {
+    #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
+        .rmt_channel = 0,
+    #else
+        .clk_src = RMT_CLK_SRC_DEFAULT, // different clock source can lead to different power consumption
+        .resolution_hz = 10 * 1000 * 1000, // 10MHz
+        .flags.with_dma = false, // whether to enable the DMA feature
+    #endif
+    };
+
+    // LED Strip object handle
+    led_strip_handle_t led_strip;
+    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
+
+    uint32_t maxhue = 360;
+    uint8_t position = 0;
+
+    for (uint8_t i = 0; i < PIXEL_COUNT; i++)
+    {
+        ESP_ERROR_CHECK(led_strip_set_pixel_hsv(led_strip, (i+position)%10, i*(maxhue / 10) , 255, 10));
+    }
+    
+    for ( ;; )
+    {
+        // /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
+        // for (uint8_t i = 0; i < PIXEL_COUNT; i++)
+        // {
+        //     ESP_ERROR_CHECK(led_strip_set_pixel_hsv(led_strip, (i+position)%10, i*(maxhue / 10) , 255, 10));
+        // }
+
+        // /* Refresh the strip to send data */
+        // ESP_ERROR_CHECK(led_strip_refresh(led_strip));
+
+        // position++;
+        // position%=10;
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
