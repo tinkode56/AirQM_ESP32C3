@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-15 14:00:51 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-25 17:46:04
+ * @Last Modified time: 2024-07-09 21:27:15
  */
 
 #include <stdio.h>
@@ -29,6 +29,7 @@
 #include "esp_sntp.h"
 #include "esp_netif_sntp.h"
 #include "led_strip.h"
+#include "board_support.h"
 
 QueueHandle_t i2cdev_queue;
 QueueHandle_t s8_queue;
@@ -51,7 +52,7 @@ const uint16_t senseair_stack_size = 2800;
 const uint16_t pms_stack_size = 2800;
 const uint16_t datmgr_stack_size = 1500;
 const uint16_t influx_stack_size = 5000;
-const uint16_t neopixel_stack_size = 2000;
+const uint16_t neopixel_stack_size = 3000;
 
 
 void vOledTask(void *pvParameters);
@@ -80,8 +81,8 @@ void app_main(void)
     i2c_master_bus_config_t conf = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_NUM_0,
-        .sda_io_num = GPIO_NUM_8,
-        .scl_io_num = GPIO_NUM_9,
+        .sda_io_num = AIRQM_I2C_SDA,
+        .scl_io_num = AIRQM_I2C_SCL,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
@@ -486,7 +487,6 @@ void vInfluxDBManagerTask(void *pvParameters)
 }
 
 #define PIXEL_COUNT  10
-#define NEOPIXEL_PIN GPIO_NUM_3
 
 
 void vNeopixelManagerTask(void *pvParameters)
@@ -494,7 +494,7 @@ void vNeopixelManagerTask(void *pvParameters)
 
     /* LED strip initialization with the GPIO and pixels number*/
     led_strip_config_t strip_config = {
-        .strip_gpio_num = NEOPIXEL_PIN, // The GPIO that connected to the LED strip's data line
+        .strip_gpio_num = AIRQM_NEOPIXEL_PIN, // The GPIO that connected to the LED strip's data line
         .max_leds = PIXEL_COUNT, // The number of LEDs in the strip,
         .led_pixel_format = LED_PIXEL_FORMAT_GRB, // Pixel format of your LED strip
         .led_model = LED_MODEL_WS2812, // LED strip model
@@ -518,6 +518,8 @@ void vNeopixelManagerTask(void *pvParameters)
     uint32_t maxhue = 360;
     uint8_t position = 0;
 
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
     for (uint8_t i = 0; i < PIXEL_COUNT; i++)
     {
         ESP_ERROR_CHECK(led_strip_set_pixel_hsv(led_strip, (i+position)%10, i*(maxhue / 10) , 255, 10));
@@ -525,7 +527,7 @@ void vNeopixelManagerTask(void *pvParameters)
     
     for ( ;; )
     {
-        // /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
+        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
         // for (uint8_t i = 0; i < PIXEL_COUNT; i++)
         // {
         //     ESP_ERROR_CHECK(led_strip_set_pixel_hsv(led_strip, (i+position)%10, i*(maxhue / 10) , 255, 10));

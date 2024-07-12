@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-19 16:22:34 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-25 17:29:16
+ * @Last Modified time: 2024-07-09 20:18:33
  */
 
 #if !defined(_SENSEAIR_S8_H)
@@ -10,10 +10,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "driver/gpio.h"
 #include "driver/uart.h"
 #include "freertos/queue.h"
 #include "mbcontroller.h"
+#include "board_support.h"
 
 /**
  * MODBUS message
@@ -24,8 +24,8 @@
 */
 
 #define SENSEAIR_UART_PORT UART_NUM_0
-#define SENSEAIR_RX_PIN GPIO_NUM_20
-#define SENSEAIR_TX_PIN GPIO_NUM_21
+#define SENSEAIR_RX_PIN AIRQM_SENSEAIR_RX_PIN
+#define SENSEAIR_TX_PIN AIRQM_SENSEAIR_TX_PIN
 
 #define CHECK_CO2_BGCAL(x)      ((x) & 0x20) ? 1 : 0
 #define CHECK_CO2_N_BGCAL(x)    ((x) & 0x40) ? 1 : 0

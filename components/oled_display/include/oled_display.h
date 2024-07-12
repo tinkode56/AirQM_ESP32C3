@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-02-29 18:06:56 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-25 17:29:59
+ * @Last Modified time: 2024-07-09 20:25:45
  */
 
 #if !defined(_OLED_DISPLAY_H)
@@ -12,17 +12,17 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
-#include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "board_support.h"
 // #include "lvgl.h"
 
-#define OLED_SCLK_PIN   GPIO_NUM_4
-#define OLED_MOSI_PIN   GPIO_NUM_6
-#define OLED_CS_PIN     GPIO_NUM_7
-#define OLED_DC_PIN     GPIO_NUM_5
-#define OLED_RESET_PIN  GPIO_NUM_10
+#define OLED_SCLK_PIN   AIRQM_OLED_SCK_PIN
+#define OLED_MOSI_PIN   AIRQM_OLED_MOSI_PIN
+#define OLED_CS_PIN     AIRQM_OLED_CS_PIN
+#define OLED_DC_PIN     AIRQM_OLED_DC_PIN
+#define OLED_RESET_PIN  AIRQM_OLED_RESET_PIN
 
 #define OLED_HOST   SPI2_HOST
 
