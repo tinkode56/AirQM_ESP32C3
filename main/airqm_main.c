@@ -89,6 +89,9 @@ void app_main(void)
     i2c_master_bus_handle_t bus_handle;
     ESP_ERROR_CHECK(i2c_new_master_bus(&conf, &bus_handle));
 
+    xTaskCreate(vNeopixelManagerTask, "Neopixel TASK", neopixel_stack_size, NULL, tskIDLE_PRIORITY, &xNeopixelManagerHandle);
+    configASSERT(xNeopixelManagerHandle);
+
     xTaskCreate(vDataManagerTask, "DataMgr TASK", datmgr_stack_size, NULL, 11, &xDataManagerHandle);
     configASSERT(xDataManagerHandle);
 
@@ -106,9 +109,6 @@ void app_main(void)
 
     xTaskCreate(PMS_MainTask, "PMS5003 TASK", pms_stack_size, (void *)pms_queue, tskIDLE_PRIORITY, &xPMSTaskHandle);
     configASSERT(xPMSTaskHandle);
-
-    xTaskCreate(vNeopixelManagerTask, "Neopixel TASK", neopixel_stack_size, NULL, tskIDLE_PRIORITY, &xNeopixelManagerHandle);
-    configASSERT(xNeopixelManagerHandle);
 
     for ( ;; )
     {
@@ -486,11 +486,11 @@ void vInfluxDBManagerTask(void *pvParameters)
     }
 }
 
-#define PIXEL_COUNT  10
-
+#define PIXEL_COUNT 10
 
 void vNeopixelManagerTask(void *pvParameters)
 {  
+    ESP_LOGW("NEOPIXEL TASK", "Task started");
 
     /* LED strip initialization with the GPIO and pixels number*/
     led_strip_config_t strip_config = {
@@ -502,42 +502,37 @@ void vNeopixelManagerTask(void *pvParameters)
     };
 
     led_strip_rmt_config_t rmt_config = {
-    #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
-        .rmt_channel = 0,
-    #else
         .clk_src = RMT_CLK_SRC_DEFAULT, // different clock source can lead to different power consumption
         .resolution_hz = 10 * 1000 * 1000, // 10MHz
         .flags.with_dma = false, // whether to enable the DMA feature
-    #endif
     };
 
     // LED Strip object handle
     led_strip_handle_t led_strip;
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
+    ESP_LOGI("NEOPIXEL TASK", "Created LED strip object with RMT backend");
+    uint8_t colors[30] = {
+        0x10, 0x00, 0x00, //LED0
+        0x10, 0x08, 0x00, //LED1
+        0x10, 0x10, 0x00, //LED2
+        0x08, 0x10, 0x00, //LED3
+        0x00, 0x10, 0x00, //LED4
+        0x00, 0x10, 0x08, //LED5
+        0x00, 0x10, 0x10, //LED6
+        0x00, 0x08, 0x10, //LED7
+        0x00, 0x00, 0x10, //LED8
+        0x08, 0x00, 0x10  //LED9
+        };
 
-    uint32_t maxhue = 360;
-    uint8_t position = 0;
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
-
-    for (uint8_t i = 0; i < PIXEL_COUNT; i++)
-    {
-        ESP_ERROR_CHECK(led_strip_set_pixel_hsv(led_strip, (i+position)%10, i*(maxhue / 10) , 255, 10));
+    for (int i = 0; i < PIXEL_COUNT; i++) {
+        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, i, colors[i*3], colors[(i*3)+1], colors[(i*3)+2]));
     }
-    
+
+    /* Refresh the strip to send data */
+    ESP_ERROR_CHECK(led_strip_refresh(led_strip));
+
     for ( ;; )
     {
-        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        // for (uint8_t i = 0; i < PIXEL_COUNT; i++)
-        // {
-        //     ESP_ERROR_CHECK(led_strip_set_pixel_hsv(led_strip, (i+position)%10, i*(maxhue / 10) , 255, 10));
-        // }
-
-        // /* Refresh the strip to send data */
-        // ESP_ERROR_CHECK(led_strip_refresh(led_strip));
-
-        // position++;
-        // position%=10;
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
