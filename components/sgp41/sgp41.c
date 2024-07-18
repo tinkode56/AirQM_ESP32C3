@@ -101,7 +101,7 @@ void SGP41_ExecuteConditioning(uint16_t *voc_raw)
     input[4] = 0x66;
     input[5] = 0x93;
 
-    SGP41_ReadWithParam(SGP41_COMMAND_EXECUTE_CONDITIONING, input, 6, 50, buf, 3);
+    SGP41_ReadWithParam(SGP41_COMMAND_EXECUTE_CONDITIONING, input, 6, 60, buf, 3);
 
     *voc_raw = (uint16_t)(((uint16_t)buf[0]) << 8 | buf[1]);
 }
@@ -119,7 +119,7 @@ void SGP41_MeasureRawSignals(uint16_t temp_raw, uint16_t hum_raw, uint16_t *voc_
     input[4] = (temp_raw >> 0) & 0xFF;
     input[5] = SHT45_CRC8(&input[3], 2);
 
-    SGP41_ReadWithParam(SGP41_COMMAND_MEASURE_RAW, input, 6, 50, buf, 6);
+    SGP41_ReadWithParam(SGP41_COMMAND_MEASURE_RAW, input, 6, 60, buf, 6);
 
     *voc_raw = (uint16_t)(((uint16_t)buf[0]) << 8 | buf[1]);
     *nox_raw = (uint16_t)(((uint16_t)buf[3]) << 8 | buf[4]);

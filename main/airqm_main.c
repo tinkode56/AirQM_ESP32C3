@@ -68,7 +68,10 @@ void SyncTime(void);
 void app_main(void)
 {
     // Wifi provisioning and connection init
-    // airqm_wifiprov_init();
+    airqm_wifiprov_init();
+
+    // Synchronize time from internet
+    SyncTime();
 
     // Create queue between i2c and oled task
     i2cdev_queue = xQueueCreate(3, sizeof(struct I2CDevMessage *));
@@ -89,25 +92,25 @@ void app_main(void)
     i2c_master_bus_handle_t bus_handle;
     ESP_ERROR_CHECK(i2c_new_master_bus(&conf, &bus_handle));
 
-    xTaskCreate(vNeopixelManagerTask, "Neopixel TASK", neopixel_stack_size, NULL, tskIDLE_PRIORITY, &xNeopixelManagerHandle);
-    configASSERT(xNeopixelManagerHandle);
+    // xTaskCreate(vNeopixelManagerTask, "Neopixel TASK", neopixel_stack_size, NULL, tskAIRQM_NEOPIXEL_PRIORITY, &xNeopixelManagerHandle);
+    // configASSERT(xNeopixelManagerHandle);
 
-    xTaskCreate(vDataManagerTask, "DataMgr TASK", datmgr_stack_size, NULL, 11, &xDataManagerHandle);
+    xTaskCreate(vDataManagerTask, "DataMgr TASK", datmgr_stack_size, NULL, tskAIRQM_DATAMGR_PRIORITY, &xDataManagerHandle);
     configASSERT(xDataManagerHandle);
 
-    // xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", influx_stack_size, NULL, 11, &xInfluxManagerHandle);
-    // configASSERT(xInfluxManagerHandle);
+    xTaskCreate(vInfluxDBManagerTask, "InfluxMgr TASK", influx_stack_size, NULL, tskAIRQM_INFLUX_PRIORITY, &xInfluxManagerHandle);
+    configASSERT(xInfluxManagerHandle);
 
-    xTaskCreate(vI2CDevTask, "I2CDev TASK", i2c_stack_size, (void *)bus_handle, 11, &xI2CDevTaskHandle);
+    xTaskCreate(vI2CDevTask, "I2CDev TASK", i2c_stack_size, (void *)bus_handle, tskAIRQM_I2C_PRIORITY, &xI2CDevTaskHandle);
     configASSERT(xI2CDevTaskHandle);
 
-    xTaskCreate(vOledTask, "OLED TASK", oled_stack_size, NULL, 11, &xOledTaskHandle);
+    xTaskCreate(vOledTask, "OLED TASK", oled_stack_size, NULL, tskAIRQM_DISPLAY_PRIORITY, &xOledTaskHandle);
     configASSERT(xOledTaskHandle);
 
-    xTaskCreate(vSenseairTask, "SENSEAIR TASK", senseair_stack_size, NULL, tskIDLE_PRIORITY, &xSenseairTaskHandle);
+    xTaskCreate(vSenseairTask, "SENSEAIR TASK", senseair_stack_size, NULL, tskAIRQM_CO2_PRIORITY, &xSenseairTaskHandle);
     configASSERT(xSenseairTaskHandle);
 
-    xTaskCreate(PMS_MainTask, "PMS5003 TASK", pms_stack_size, (void *)pms_queue, tskIDLE_PRIORITY, &xPMSTaskHandle);
+    xTaskCreate(PMS_MainTask, "PMS5003 TASK", pms_stack_size, (void *)pms_queue, tskAIRQM_PMS_PRIORITY, &xPMSTaskHandle);
     configASSERT(xPMSTaskHandle);
 
     for ( ;; )
@@ -353,13 +356,19 @@ void SyncTime(void)
         }
     } while (total_retries < total_max_retries);
     assert(total_retries < total_max_retries);
-
+    // update 'now' variable with current time
     time(&now);
+
+    // Set timezone
+    ESP_LOGI("NTP-Sync", "Timezone is set to: %s", CONFIG_AIRQM_NTP_TZ);
+    setenv("TZ", CONFIG_AIRQM_NTP_TZ, 1);
+    tzset();
     localtime_r(&now, &timeinfo);
 
     char strftime_buf[64];
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI("NTP-Sync", "The current date/time is: %s", strftime_buf);
+
 }
 
 void vDataManagerTask(void *pvParameters)
@@ -447,10 +456,10 @@ void vDataManagerTask(void *pvParameters)
             // Send data to InfluxDB Manager
             if (influxdb_queue != 0)
             {
-                // if(xQueueSendToBack(influxdb_queue, (void *) &allMetrics, (TickType_t) 0) != pdPASS)
-                // {
-                //     ESP_LOGE("AqmDataManager", "Failed to post the message to influxdb queue");
-                // }
+                if(xQueueSendToBack(influxdb_queue, (void *) &allMetrics, (TickType_t) 0) != pdPASS)
+                {
+                    ESP_LOGE("AqmDataManager", "Failed to post the message to influxdb queue");
+                }
             }
             // Update last wake time with current time
             xLastWakeTime = xTaskGetTickCount();
@@ -462,14 +471,6 @@ void vDataManagerTask(void *pvParameters)
 void vInfluxDBManagerTask(void *pvParameters)
 {
     AirQM_metrics allMetrics = { 0 };
-    
-    // Set timezone
-    ESP_LOGI("NTP-Sync", "Timezone is set to: %s", CONFIG_AIRQM_NTP_TZ);
-    setenv("TZ", CONFIG_AIRQM_NTP_TZ, 1);
-    tzset();
-
-    // Synchronize time
-    SyncTime();
 
     for ( ;; )
     {
@@ -479,8 +480,6 @@ void vInfluxDBManagerTask(void *pvParameters)
             {
                 // Write data into InfluxDB
                 write_influxdb(&allMetrics);
-                // Re-sync with NTP server
-                SyncTime();
             }
         }
     }

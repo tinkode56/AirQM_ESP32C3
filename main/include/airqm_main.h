@@ -7,6 +7,16 @@
 #if !defined(_AIRQM_MAIN_H)
 #define _AIRQM_MAIN_H
 
+/* AirQM-C3 specific task priority mapping */
+#define tskAIRQM_DATAMGR_PRIORITY   1
+#define tskAIRQM_INFLUX_PRIORITY    7
+#define tskAIRQM_I2C_PRIORITY       9
+#define tskAIRQM_DISPLAY_PRIORITY   6
+#define tskAIRQM_CO2_PRIORITY       8
+#define tskAIRQM_PMS_PRIORITY       5
+#define tskAIRQM_NEOPIXEL_PRIORITY  3
+
+
 struct I2CDevMessage
 {
     int32_t voc_index_value;
