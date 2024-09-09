@@ -59,5 +59,6 @@ void oled_flush(void);
 // 21 characters per line, 8 lines
 void oled_draw_glyph(char glyph, uint8_t row, uint8_t column);
 void oled_draw_text(char string[], uint8_t row, uint8_t column);
+void oled_clear_display_buffer(void);
 
 #endif // _OLED_DISPLAY_H

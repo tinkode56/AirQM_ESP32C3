@@ -2,11 +2,12 @@
  * @Author: calin.acr 
  * @Date: 2024-02-29 18:23:15 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-03-21 01:53:50
+ * @Last Modified time: 2024-09-09 22:21:13
  */
 #include <stdio.h>
 #include "string.h"
 #include "oled_display.h"
+#include "oled_splash_screen.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -45,7 +46,7 @@ uint8_t page_changed[8] = { 0 };
 void oled_init(void)
 {
     GDDRAM_frame = heap_caps_malloc(GDDRAM_SIZE, MALLOC_CAP_DMA);
-    memset(GDDRAM_frame, 0x00, GDDRAM_SIZE);
+    memcpy(&GDDRAM_frame[0], &splash_screen[0], GDDRAM_SIZE);
 
 
     ESP_LOGI("oled_display", "Initialize SPI bus");
@@ -106,9 +107,10 @@ void oled_init(void)
 
     for (uint8_t i = 0; i < DISPLAY_HEIGHT / 8; i++)
     {
-        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0xB0 + i, NULL, 0));
-        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0x00, NULL, 0));
-        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0x10 + i, NULL, 0));
+        ESP_LOGI("OLED", "Page: %d, GDDRAM_frame[DISPLAY_WIDTH * i]: %d, DISPLAY_WIDTH * i: %d", i, GDDRAM_frame[DISPLAY_WIDTH * i], DISPLAY_WIDTH * i);
+        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0xB0 + i, NULL, 0));   /* Set page start address (B0-B7)*/
+        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0x00, NULL, 0));       /* Set lower nibble of column start address (00-0F) */
+        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(io_handle, 0x10, NULL, 0));       /* Set higher nibble of column start address (10-1F) */
         
         ESP_ERROR_CHECK(esp_lcd_panel_io_tx_color(io_handle, -1, &GDDRAM_frame[DISPLAY_WIDTH * i], DISPLAY_WIDTH));
         
@@ -170,4 +172,9 @@ void oled_draw_text(char string[], uint8_t row, uint8_t column)
         i++;
         string+=1;
     }
+}
+
+void oled_clear_display_buffer(void)
+{
+    memset(GDDRAM_frame, 0x00, GDDRAM_SIZE);
 }

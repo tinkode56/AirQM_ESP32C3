@@ -2,7 +2,7 @@
  * @Author: calin.acr 
  * @Date: 2024-03-15 14:00:51 
  * @Last Modified by: calin.acr
- * @Last Modified time: 2024-07-09 21:27:15
+ * @Last Modified time: 2024-09-09 22:23:18
  */
 
 #include <stdio.h>
@@ -67,6 +67,8 @@ void SyncTime(void);
 
 void app_main(void)
 {
+    /* Initialize display and set the splash screen */
+    oled_init();
     // Wifi provisioning and connection init
     airqm_wifiprov_init();
 
@@ -142,7 +144,7 @@ void vOledTask(void *pvParameters)
 
     AirQM_metrics allMetrics = { 0 };
 
-    oled_init();
+    oled_clear_display_buffer();
     
     oled_draw_text("AirQM -> Meow TECH", 0, 1);
 
